@@ -1,0 +1,33 @@
+# ---- Office / Excel / WPS 临时文件 ----
+~$*.xlsx
+~$*.xls
+~$*.docx
+~$*.pptx
+*.tmp
+*.bak
+
+# ---- LibreOffice 锁文件 ----
+.~lock.*#
+
+# ---- 操作系统 ----
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ---- 编辑器 / IDE ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- Python（scripts/build_model.py）----
+__pycache__/
+*.py[cod]
+.venv/
+venv/

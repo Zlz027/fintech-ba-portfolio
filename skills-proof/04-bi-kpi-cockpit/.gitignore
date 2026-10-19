@@ -1,0 +1,11 @@
+# 本地环境噪音
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Tableau 本地二进制文件（不进仓库）
+*.twb
+*.twbx
+*.hyper
