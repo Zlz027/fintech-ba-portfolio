@@ -1,0 +1,25 @@
+# ===== Jupyter Notebook =====
+.ipynb_checkpoints/
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+
+# ===== 操作系统 =====
+.DS_Store
+Thumbs.db
+
+# ===== IDE =====
+.vscode/
+.idea/
+
+# ===== 本地数据文件 =====
+# 本项目的客群数据由 notebook 内 numpy 模拟生成（Colab 一键运行的前提），
+# 本地实验用数据文件无需上传
+*.csv
+*.xlsx

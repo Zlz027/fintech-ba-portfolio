@@ -1,0 +1,22 @@
+# 数据与产物不提交（** 才能匹配各子项目下的 data/raw）
+**/data/raw/*
+!**/data/raw/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# 测试与构建
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# 系统
+.DS_Store
+Thumbs.db

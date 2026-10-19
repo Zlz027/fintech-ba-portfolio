@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fintech-ba-portfolio"
+version = "2.0.0"
+description = "四个金融 AI 场景的端到端分析：信用风险定价 / 客户流失留存经济性 / 欺诈阈值优化 / 月度经营分析包"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Fintech BA Portfolio" }]
+keywords = ["fintech", "credit-risk", "churn", "fraud-detection", "fp&a", "scorecard"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]

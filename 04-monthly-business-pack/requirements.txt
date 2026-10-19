@@ -1,0 +1,8 @@
+# 核心依赖（与开发环境一致，保证可复现）
+pandas==2.2.3
+numpy==1.26.4
+scikit-learn==1.5.2
+matplotlib==3.9.2
+seaborn==0.13.2
+jupyter==1.1.1
+nbformat==5.10.4

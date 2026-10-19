@@ -1,0 +1,5 @@
+# MVP5 运行依赖（Colab 已全部预装；本地一键安装：pip install -r requirements.txt）
+numpy>=1.24
+pandas>=1.5
+matplotlib>=3.7
+seaborn>=0.12

@@ -1,0 +1,7 @@
+feature,psi
+RevolvingUtilizationOfUnsecuredLines,0.0001162276479687304
+NumberOfTime30-59DaysPastDueNotWorse,1.8786937006636208e-05
+NumberOfTimes90DaysLate,0.00016093490773732644
+NumberOfTime60-89DaysPastDueNotWorse,6.174832672347237e-05
+NumberOfDependents,0.0001516479435930129
+DebtRatio,0.0001148654277387721
