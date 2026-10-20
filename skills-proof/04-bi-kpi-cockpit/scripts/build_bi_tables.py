@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """fintech-ba-portfolio 四项目 outputs → Tableau「金融科技 BA 核心指标看板」数据表。
 
-输入：--root 指向 fintech-ba-portfolio 仓库（含 01-credit-scorecard / 02-customer-churn /
-      03-fraud-detection / 04-monthly-business-pack 四个项目的 outputs/）。
+输入：--root 指向 fintech-ba-portfolio 仓库（含 01-python-credit-scoring / 02-python-churn-ltv /
+      03-python-fraud-threshold / 04-fp-a-monthly-review 四个项目的 outputs/）。
 输出（--out 指定，默认 ./data；全部 utf-8-sig 带 BOM，Excel 双击不乱码、Tableau 正确识别中文）：
       1) kpi_summary.csv             一行 20 列 KPI 宽表
       2) time_series_and_curves.csv  Tidy 长表（P1 80 行 + P3 4600 行 + P4 26 行）
@@ -32,9 +32,9 @@ BUFFER_LINE = 3000.0  # P4 现金流安全缓冲线（万元），全脚本唯�
 # 人工核实过的期望值（交叉验证用；若源数据更新，需同步改这里）
 # ---------------------------------------------------------------------------
 EXP = {
-    "p1_cv_auc": 0.8629,      # metrics.json XGBoost cv_auc="0.8629±0.0036" 左半
-    "p1_ks": 0.5826,          # metrics.json XGBoost test_ks
-    "p1_threshold": 529.29,   # policy_curve.csv margin_book 最大行 threshold
+    "p1_cv_auc": 0.8628,      # metrics.json XGBoost cv_auc="0.8628±0.0037" 左半
+    "p1_ks": 0.5794,          # metrics.json XGBoost test_ks=0.5793940687
+    "p1_threshold": 529.345,  # policy_curve.csv margin_book 最大行 threshold=529.3452
     "p1_approval": 0.90613,   # 同上 approval_rate
     "p1_bad_rate": 0.03362,   # 同上 bad_rate
     "p1_margin": 0.01747,     # 同上 margin_book（全组合利润率，非绝对利润）
@@ -89,13 +89,13 @@ def dump_csv(path: Path, header: list[str], rows: list[list[Any]]) -> None:
 
 
 def detect_root(cli_root: str | None) -> Path:
-    """定位仓库根目录（含 01-credit-scorecard/outputs 的目录）。
+    """定位仓库根目录（含 01-python-credit-scoring/outputs 的目录）。
 
     顺序：--root 参数 → 环境变量 PORTFOLIO_ROOT → ./fintech-ba-portfolio →
     当前工作目录及其最多 6 层祖先（含各自的直接子目录）→ 脚本所在目录及其
     最多 6 层祖先（含各自的直接子目录）。
     向上追溯 6 层是为了兼容 scripts/build_bi_tables.py 放在
-    skills-proof/04-bi-dashboard/scripts/ 这类深层子目录的用法。
+    skills-proof/04-bi-kpi-cockpit/scripts/ 这类深层子目录的用法。
     找到多个候选时打印警告并按优先级用第一个（显式指定 --root/环境变量时不警告）。
     """
     def expand(base: Path) -> list[Path]:
@@ -119,10 +119,10 @@ def detect_root(cli_root: str | None) -> Path:
         if c in seen:
             continue
         seen.add(c)
-        if (c / "01-credit-scorecard" / "outputs").is_dir():
+        if (c / "01-python-credit-scoring" / "outputs").is_dir():
             found.append(c.resolve())
     if not found:
-        sys.exit("未找到 fintech-ba-portfolio 根目录（缺 01-credit-scorecard/outputs），"
+        sys.exit("未找到 fintech-ba-portfolio 根目录（缺 01-python-credit-scoring/outputs），"
                  "请用 --root 指定，或设置环境变量 PORTFOLIO_ROOT")
     if len(found) > 1 and not explicit:
         print(f"警告：找到 {len(found)} 个候选根目录，按优先级使用第一个；"
@@ -136,18 +136,18 @@ def detect_root(cli_root: str | None) -> Path:
 # 开跑前检查：必需源文件清单（缺失时一次性列全，提示先跑哪个项目）
 # ---------------------------------------------------------------------------
 REQUIRED_FILES: dict[str, list[str]] = {
-    "P1 信用风险": ["01-credit-scorecard/outputs/metrics.json",
-                    "01-credit-scorecard/outputs/policy_curve.csv"],
-    "P2 客户流失": ["02-customer-churn/outputs/metrics.json",
-                    "02-customer-churn/outputs/uplift_sensitivity.csv",
-                    "02-customer-churn/outputs/priority_retention_list.csv"],
-    "P3 欺诈检测": ["03-fraud-detection/outputs/threshold_curve.csv",
-                    "03-fraud-detection/outputs/strategy_cost.csv",
-                    "03-fraud-detection/outputs/model_comparison.csv",
-                    "03-fraud-detection/outputs/threshold_sensitivity.csv"],
-    "P4 经营分析": ["04-monthly-business-pack/outputs/cash_forecast_13w.csv",
-                    "04-monthly-business-pack/outputs/scenarios.csv",
-                    "04-monthly-business-pack/outputs/funding_advice.csv"],
+    "P1 信用风险": ["01-python-credit-scoring/outputs/metrics.json",
+                    "01-python-credit-scoring/outputs/policy_curve.csv"],
+    "P2 客户流失": ["02-python-churn-ltv/outputs/metrics.json",
+                    "02-python-churn-ltv/outputs/uplift_sensitivity.csv",
+                    "02-python-churn-ltv/outputs/priority_retention_list.csv"],
+    "P3 欺诈检测": ["03-python-fraud-threshold/outputs/threshold_curve.csv",
+                    "03-python-fraud-threshold/outputs/strategy_cost.csv",
+                    "03-python-fraud-threshold/outputs/model_comparison.csv",
+                    "03-python-fraud-threshold/outputs/threshold_sensitivity.csv"],
+    "P4 经营分析": ["04-fp-a-monthly-review/outputs/cash_forecast_13w.csv",
+                    "04-fp-a-monthly-review/outputs/scenarios.csv",
+                    "04-fp-a-monthly-review/outputs/funding_advice.csv"],
 }
 
 
@@ -172,7 +172,7 @@ def extract_p1(root: Path) -> dict[str, Any]:
     - policy_curve.csv：threshold,approval_rate,bad_rate,margin_approved,margin_book，
       共 40 行；取 margin_book 最大的一行为最优策略（阈值/通过率/坏账率/组合利润率）。
     """
-    out = root / "01-credit-scorecard" / "outputs"
+    out = root / "01-python-credit-scoring" / "outputs"
     metrics = load_json(out / "metrics.json")
     xgb = pick(metrics, lambda m: m.get("model") == "XGBoost",
                "P1 metrics.json 中 model='XGBoost' 的行")
@@ -202,7 +202,7 @@ def extract_p2(root: Path) -> dict[str, Any]:
       churn_prob,LTV,expected_save（注意字段名是 LTV 不是 clv），200 行按 expected_save
       降序的优先挽留名单；按 churn_prob 分三档：>=0.80 高 / 0.65-0.80 中 / <0.65 低。
     """
-    out = root / "02-customer-churn" / "outputs"
+    out = root / "02-python-churn-ltv" / "outputs"
     metrics = load_json(out / "metrics.json")
     lr = pick(metrics, lambda m: m.get("model") == "LogisticRegression",
               "P2 metrics.json 中 model='LogisticRegression' 的行")
@@ -237,7 +237,7 @@ def extract_p3(root: Path) -> dict[str, Any]:
     - threshold_sensitivity.csv：取 fp_cost=120 行的 best_threshold，与曲线最低点阈值
       交叉断言（两处独立计算应一致）。
     """
-    out = root / "03-fraud-detection" / "outputs"
+    out = root / "03-python-fraud-threshold" / "outputs"
     curve = [
         {
             "threshold": float(r["threshold"]),
@@ -277,7 +277,7 @@ def extract_p4(root: Path) -> dict[str, Any]:
       三行全量进 p4_scenarios.csv 供看板「情景」筛选器联动；
     - funding_advice.csv：拼接全部「结论」文本，其中「¥2920 万」用于融资缺口交叉断言。
     """
-    out = root / "04-monthly-business-pack" / "outputs"
+    out = root / "04-fp-a-monthly-review" / "outputs"
     cash = sorted(
         (
             {

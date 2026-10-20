@@ -7,7 +7,7 @@ import numpy as np
 
 from conftest import load_finance
 
-fin = load_finance("02-customer-churn")
+fin = load_finance("02-python-churn-ltv")
 
 
 def _km_sample(seed=1, n=800, max_time=72):

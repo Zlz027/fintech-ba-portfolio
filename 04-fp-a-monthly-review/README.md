@@ -131,6 +131,8 @@ python3 src/analysis.py   # 回收系数敏感性（独立可跑，不依赖 Not
 - 产物：`images/`（`monthly_trend`、`variance_bridge`、`cash_forecast`、`scenarios` 共 4 图）、`outputs/`（`monthly_pl.csv` 月度损益、`weekly_cash.csv` 周现金流、`variance_bridge.csv` 差异桥、`scenarios.csv` 情景、`cash_forecast_13w.csv` 13 周预测、`funding_advice.csv` 融资建议、`recovery_sensitivity.csv` 回收系数敏感性共 7 表）；
 - 文档：`docs/BRD.md`（业务需求）、`docs/metrics.md`（指标字典）、`docs/monitoring.md`（月度滚动重估与资金监控方案）；生产取数：`sql/extract.sql`（经营宽表）、`sql/metrics.sql`（经营与流动性指标口径）。
 
+**验收标准**：`python3 src/analysis.py` 首行输出「基线校验（recovery=0.92）：第 13 周见底 ¥80 万 / 缺口 ¥2,920 万」即代表现金流口径复现一致；该脚本不依赖 Notebook 产物，可独立运行（本机实测通过）。
+
 ## 10. 局限性与声明
 
 - 数据为**模拟**（固定种子），量级参考行业经验值，不代表任何真实公司；生产环境应以实际总账/流水复算；

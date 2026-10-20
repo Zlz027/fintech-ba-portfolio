@@ -1,0 +1,21 @@
+# 文本文件统一 LF 行尾
+* text=auto eol=lf
+
+# 明确标记为文本
+*.md text eol=lf
+*.py text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+
+# 二进制文件（不参与行尾转换 / diff）
+*.xlsx binary
+*.xls binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+
+# Excel / PNG 不做逐行 diff（避免二进制乱码）
+*.xlsx diff=excel
+*.png diff

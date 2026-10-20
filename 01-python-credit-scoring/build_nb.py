@@ -1,4 +1,4 @@
-"""生成 01-credit-scorecard 的 Notebook：信用风险评分与风险-定价联动（V2.0 主打项目）。
+"""生成 01-python-credit-scoring 的 Notebook：信用风险评分与风险-定价联动（V2.0 主打项目）。
 
 数据：Give Me Some Credit（Kaggle，经 OpenML/TabArena 清洗版，150,000 行）。
 验收线：AUC>=0.78, KS>=0.35, Gini>=0.56（CV 口径）。
@@ -8,7 +8,7 @@ from pathlib import Path
 
 import nbformat as nbf
 
-ROOT = Path("/workspace/fintech-ba-portfolio/01-credit-scorecard")
+ROOT = Path(__file__).resolve().parent
 nb = nbf.v4.new_notebook()
 cells = []
 md = lambda s: cells.append(nbf.v4.new_markdown_cell(s))
@@ -41,7 +41,7 @@ from sklearn.metrics import roc_auc_score, roc_curve
 import xgboost as xgb
 import shap
 
-SEED = 42
+SEED = 42  # 固定种子：切分/训练/采样全部锚定，保证"复跑=复现"——README 数字任何人可一键验证
 ROOT = Path.cwd().parent if Path.cwd().name == "notebooks" else Path.cwd()
 sys.path.insert(0, str(ROOT / "src"))
 import finance as fin  # noqa: E402
@@ -64,7 +64,7 @@ md("""## 1. 数据清洗与探索性分析
 - `RevolvingUtilization` / `DebtRatio` 存在极端值（>1 或上千），按 99.9% 分位截尾；
 - `MonthlyIncome` 缺失 19.8%、`NumberOfDependents` 缺失 2.6%：WOE 分箱中缺失并入最低箱（缺失与更高违约率同向，方向保守），XGBoost 侧用中位数填补 + 缺失指示。""")
 
-code('''for c in ["RevolvingUtilizationOfUnsecuredLines", "DebtRatio", "MonthlyIncome"]:
+code('''for c in ["RevolvingUtilizationOfUnsecuredLines", "DebtRatio", "MonthlyIncome"]:  # p99.9 截尾而非删行：长尾极端值会扭曲分位数与相关系数，截尾保留样本量使 WOE 分箱更稳
     cap = df[c].quantile(0.999)
     df[c] = df[c].clip(upper=cap)
 FEATS = [c for c in df.columns if c != "y"]
@@ -87,8 +87,8 @@ md("""## 2. 特征筛选：IV + 相关性 + VIF
 
 code('''woe_cols, iv_rows, bin_tables = [], [], {}
 for c in FEATS:
-    x = df[c].fillna(-np.inf).values  # 缺失并入最低箱
-    w, tab, iv = fin.monotonic_woe(x, df["y"].values, n_bins=20)
+    x = df[c].fillna(-np.inf).values  # 缺失并入最低箱：缺失与更高违约率同向（保守方向），比中位数填补更符合评分卡业务直觉
+    w, tab, iv = fin.monotonic_woe(x, df["y"].values, n_bins=20)  # 等频 20 箱而非等距：RevolvingUtilization 呈长尾分布，等距会让高利用率段样本过少、WOE 估计不稳定
     df["woe_" + c] = w
     woe_cols.append("woe_" + c)
     iv_rows.append({"feature": c, "iv": iv, "n_bins": len(tab)})
@@ -135,7 +135,7 @@ Xr_tr, Xr_te = Xr.loc[train_df.index].values, Xr.loc[test_df.index].values
 xgbm = xgb.XGBClassifier(n_estimators=500, max_depth=5, learning_rate=0.05, subsample=0.85,
                          colsample_bytree=0.85, min_child_weight=20, reg_lambda=2.0,
                          eval_metric="auc", random_state=SEED, n_jobs=4)
-cv = cross_val_score(xgbm, Xr_tr, y_tr, cv=StratifiedKFold(5, shuffle=True, random_state=42), scoring="roc_auc")
+cv = cross_val_score(xgbm, Xr_tr, y_tr, cv=StratifiedKFold(5, shuffle=True, random_state=42), scoring="roc_auc")  # 报 5 折 CV 的 mean±std：单次切分 AUC 有运气成分，CV 标准差即泛化性能的置信区间口径
 xgbm.fit(Xr_tr, y_tr)
 p_xgb = xgbm.predict_proba(Xr_te)[:, 1]
 met = pd.DataFrame([
@@ -151,7 +151,7 @@ md("""## 4. 评分刻度与 PSI 监控
 - 评分卡分值：`points_j = -(PDO/ln2) × β_j × WOE_j`，基准分锚定组合平均风险；
 - PSI：训练集 vs 测试集评分分布，分级告警（<0.10 稳定 / 0.10-0.25 观察 / >0.25 显著漂移）。""")
 
-code('''FACTOR, OFFSET = fin.score_mapping(50, 600, 20)
+code('''FACTOR, OFFSET = fin.score_mapping(50, 600, 20)  # 600 分=好坏比 50:1、PDO=20 为业界标准刻度（同 FICO）：分数每降 20 分好坏比减半，风险变化对业务方可读
 p_tr = lr.predict_proba(Xw_tr)[:, 1]
 s_tr, s_te = fin.prob_to_score(p_tr, FACTOR, OFFSET), fin.prob_to_score(p_lr, FACTOR, OFFSET)
 print("训练集评分范围 [%.0f, %.0f]，均值 %.0f" % (s_tr.min(), s_tr.max(), s_tr.mean()))
@@ -198,7 +198,7 @@ ead = np.full(len(pd_xgb), EAD)
 s_xgb = fin.prob_to_score(pd_xgb, FACTOR, OFFSET)
 wtp = fin.breakeven_rate(pd_xgb, LGD, FUND, OPEX) + COMP  # 客户愿付
 
-# S0 无模型：全量通过 + 统一定价；实现口径只有 wtp>=r_flat 的客户成交
+# S0 无模型：全量通过 + 统一定价；实现口径只有 wtp>=r_flat 的客户成交——双口径之差即不定价的代价（理论口径测公式、实现口径测逆向选择现实）
 r_flat, profit_flat = fin.flat_rate_baseline(pd_xgb, LGD, FUND, OPEX, TGT, CAP)
 acc0 = wtp >= r_flat - 1e-9
 m0_theory = float(profit_flat.mean())

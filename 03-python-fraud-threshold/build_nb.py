@@ -1,4 +1,4 @@
-"""生成 03-fraud-detection 的 Notebook：欺诈检测成本-收益阈值优化（V2.0 最小版）。
+"""生成 03-python-fraud-threshold 的 Notebook：欺诈检测成本-收益阈值优化（V2.0 最小版）。
 
 数据：Credit Card Fraud Detection（Kaggle 原版，284,807 行 / 492 欺诈 / 0.172%）。
 约束：Notebook 代码行数 <= 200；一页 README 含财务影响层。
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import nbformat as nbf
 
-ROOT = Path("/workspace/fintech-ba-portfolio/03-fraud-detection")
+ROOT = Path(__file__).resolve().parent
 nb = nbf.v4.new_notebook()
 cells = []
 md = lambda s: cells.append(nbf.v4.new_markdown_cell(s))
@@ -50,7 +50,7 @@ plt.rcParams.update({"font.sans-serif": ["Noto Sans CJK JP", "DejaVu Sans"], "ax
 df = pd.read_csv(ROOT / "data/raw/creditcard.csv")
 FEATS = [c for c in df.columns if c != "Class"]
 # 时序切分：前 80% 时间训练，后 20% 测试（Time 为秒，避免同批次欺诈泄漏）
-cut = df["Time"].quantile(0.80)
+cut = df["Time"].quantile(0.80)  # 为什么时序切分（禁随机切分）：同批次欺诈同时进训练/测试会让 AUPRC 虚高约 9.6%（下方有对照），上线评估只认时序口径
 tr, te = df[df["Time"] <= cut], df[df["Time"] > cut]
 Xtr, ytr = tr[FEATS].values, tr["Class"].values
 Xte, yte, amt_te = te[FEATS].values, te["Class"].values, te["Amount"].values
@@ -72,6 +72,7 @@ md("""## 2. 类别不平衡三法对比
 同一基模型（XGBoost，300 棵）下比较：**class_weight**（scale_pos_weight）、**SMOTE**（仅训练集过采样）、**随机欠采样**。评估指标用 **AUPRC**（不平衡场景下比 AUC 更能反映少数类排序力）。""")
 
 code('''SPW = (ytr == 0).sum() / (ytr == 1).sum()
+# 为什么做三法对比：不平衡处理没有免费午餐——SMOTE 用约 34 万合成样本只换来持平精度，欠采样丢掉 99.8% 多数类信息，class_weight 以零合成成本取胜（工程上线最优）
 
 def fit_eval(name, X, y, spw=None):
     m = xgb.XGBClassifier(n_estimators=300, max_depth=5, learning_rate=0.1, scale_pos_weight=spw,
@@ -121,7 +122,7 @@ md("""## 4. 成本敏感阈值（财务影响层核心）
 最优阈值 = argmin 总成本；同时给出误杀成本敏感性（¥50/¥120/¥300）与两个基线：不拦截、全量人工审核。""")
 
 code('''C_FP, C_MISS_FIX, C_REVIEW = 120.0, 50.0, 30.0
-th, cost, curve = fin.optimal_threshold(yte, p_cw, amt_te, fp_cost=C_FP, miss_fixed=C_MISS_FIX)
+th, cost, curve = fin.optimal_threshold(yte, p_cw, amt_te, fp_cost=C_FP, miss_fixed=C_MISS_FIX)  # 解析解而非网格调参：总成本关于阈值分段常数，按概率降序累加成本增量 O(n log n) 精确求全局最优；等距网格会整段跳过低金额欺诈场景的真正最优点
 flag = p_cw >= th
 caught = int(((yte == 1) & flag).sum())
 print("最优阈值 %.4f：拦截 %d 笔（%.3f%%），捕获 %d/%d 欺诈（召回 %.1f%%），总成本 ¥%.0f"
@@ -149,6 +150,7 @@ imp = pd.Series(np.abs(sv).mean(axis=0), index=FEATS).sort_values(ascending=Fals
 print("SHAP Top6：\\n" + imp.head(6).round(3).to_string())
 
 top3 = imp.head(3).index.tolist()
+# 为什么规则取欺诈率最高十分位（而非连续 SHAP 阈值）：规则要进实时引擎，十分位边界可解释、可向客户与运营交代，微秒级执行
 mask = np.ones(len(te), dtype=bool)
 rule_rows = []
 for c in top3:  # 取该特征欺诈率最高的十分位构成规则
@@ -167,7 +169,7 @@ print("组合规则 %s：覆盖 %d 笔，精确率 %.1f%%（基准 %.3f%% 的 %.
 
 md("""## 6. 监控指标体系与财务影响""")
 
-code('''half = len(p_cw) // 2
+code('''half = len(p_cw) // 2  # 前后半段 PSI：无历史基准时，用测试集自身两半近似"近期 vs 基准"的漂移监控
 mon = pd.DataFrame([
     {"指标": "评分 PSI（测试集前后半段）", "值": round(fin.score_psi(p_cw[:half], p_cw[half:]), 4), "告警线": ">0.25"},
     {"指标": "最优阈值下精确率", "值": round(caught / max(flag.sum(), 1), 4), "告警线": "<0.15"},

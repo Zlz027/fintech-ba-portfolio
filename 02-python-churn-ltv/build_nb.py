@@ -1,4 +1,4 @@
-"""生成 02-customer-churn 的 Notebook：客户流失预测 × 留存经济性（V2.0）。
+"""生成 02-python-churn-ltv 的 Notebook：客户流失预测 × 留存经济性（V2.0）。
 
 设计约束（V2.0 MVD）：Notebook 代码行数 <= 200；一页 README 含财务影响层；
 图表 >= 2；输出可直接落地的优先挽留名单。
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import nbformat as nbf
 
-ROOT = Path("/workspace/fintech-ba-portfolio/02-customer-churn")
+ROOT = Path(__file__).resolve().parent
 nb = nbf.v4.new_notebook()
 cells = []
 md = lambda s: cells.append(nbf.v4.new_markdown_cell(s))
@@ -41,7 +41,7 @@ from lifelines.statistics import proportional_hazard_test
 import xgboost as xgb
 import shap
 
-SEED = 42
+SEED = 42  # 固定种子：分层切分/KMeans/XGBoost 全部锚定，保证复跑=复现
 ROOT = Path.cwd().parent if Path.cwd().name == "notebooks" else Path.cwd()
 sys.path.insert(0, str(ROOT / "src"))
 import finance as fin  # noqa: E402
@@ -55,6 +55,7 @@ md("""## 1. 数据加载与流失定义
 流失定义：合同状态由在网转为离网（`Churn=Yes`）。`TotalCharges` 有 11 条空值（在网 0 个月的新客户），按 0 处理。""")
 
 code('''df = pd.read_csv(ROOT / "data/raw/Telco-Customer-Churn.csv")
+# 为什么 TotalCharges 空值填 0：11 条空值全部是在网 0 个月的新客户、尚未产生累计费用——填 0 是业务事实，不是统计插补
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce").fillna(0.0)
 df["Churn"] = (df["Churn"] == "Yes").astype(int)
 print(df.shape, "| churn rate = %.4f" % df["Churn"].mean())''')
@@ -64,7 +65,7 @@ md("""## 2. 切分、RFM 分群（KMeans）
 - 分层随机 80/20 切分，`SEED=42` 固定；
 - 分箱/标准化/KMeans 均在**全量数据**上拟合仅用于客户分群画像，不参与模型训练特征（分类模型只用 train 拟合预处理，见下）；""")
 
-code('''train_df, test_df = train_test_split(df, test_size=0.2, stratify=df["Churn"], random_state=SEED)
+code('''train_df, test_df = train_test_split(df, test_size=0.2, stratify=df["Churn"], random_state=SEED)  # 分层保持 26.5% 流失率；另按 tenure 分 cohort 报 AUC——快照数据无时间戳，cohort 是时序稳定性最接近的代理检验
 FEATS = [c for c in df.columns if c not in ("customerID", "Churn")]
 CAT = [c for c in FEATS if df[c].dtype == object]
 NUM = [c for c in FEATS if c not in CAT]
@@ -77,6 +78,7 @@ Xte = Xte.toarray() if hasattr(Xte, "toarray") else Xte
 ytr, yte = train_df["Churn"].values, test_df["Churn"].values
 
 # RFM 代理：F=增值服务订阅数, M=月费, R=在网月数
+# 为什么这样构造：电信无交易流水，用订阅数×月费×生命周期阶段近似 RFM；KMeans 只做客群画像、不作为模型特征（防泄漏）
 svc = ["PhoneService", "MultipleLines", "OnlineSecurity", "OnlineBackup",
        "DeviceProtection", "TechSupport", "StreamingTV", "StreamingMovies"]
 rfm = df[["tenure", "MonthlyCharges"]].copy()
@@ -95,6 +97,7 @@ md("""## 3. 客户分群画像与 Cox 比例风险模型
 code('''kmf = KaplanMeierFitter().fit(df["tenure"], df["Churn"])
 st, sp = fin.km_survival(df["tenure"].values, df["Churn"].values)
 df["LTV"] = fin.discounted_ltv(df["MonthlyCharges"].values, df["tenure"].values, st, sp)
+# 为什么用 KM 生存函数推 LTV（而非 ARPU×12）：挽留决策要比较"现在花 ¥70"与"未来 36 个月一串期望毛利"，必须同口径折现；ARPU×12 会把 12 年长约与月约客户估成同一价值，错误排序触达优先级
 prof = df.groupby("cluster").agg(n=("Churn", "size"), churn_rate=("Churn", "mean"),
                                  arpu=("MonthlyCharges", "mean"), ltv=("LTV", "mean"))
 prof["ltv_pool"] = prof["n"] * prof["ltv"]
@@ -133,7 +136,7 @@ for name, m in [("LogisticRegression", lr), ("XGBoost", xgbm)]:
     p = m.predict_proba(Xte)[:, 1]
     rows.append({"model": name, "AUC": roc_auc_score(yte, p), "KS": ks_stat(yte, p),
                  "PR_AUC": average_precision_score(yte, p)})
-for lo, hi in [(0, 12), (13, 36), (37, 72)]:
+for lo, hi in [(0, 12), (13, 36), (37, 72)]:  # 按 tenure cohort 看 AUC：各阶段排序力都 >0.75，说明模型不依赖单一生命周期区间的特征分布
     m_ = (test_df["tenure"] >= lo) & (test_df["tenure"] <= hi)
     p = xgbm.predict_proba(Xte[m_])[:, 1]
     rows.append({"model": f"XGB cohort tenure {lo}-{hi} (n={m_.sum()})", "AUC": roc_auc_score(yte[m_], p),

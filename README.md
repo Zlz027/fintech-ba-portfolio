@@ -6,22 +6,28 @@
 
 **一句话速览**：信用风险定价让年化利润从 **−2.69% 翻转到 +1.75%**（年化增量 **¥1,663 万**）；客户挽留找到净利润最大规模 **550 人**（ROI **2.62**）；欺诈拦截用成本矩阵把阈值标定在 **0.5388**（2 天省 **62.5%**）；月度经营分析提前 **6 周**预警现金击穿（融资缺口 **¥2,920 万**）。
 
+**30 秒导览**：数据上，P1-P3 用三个公开数据集（GMSC 15 万样本 / Telco 7,043 客户 / Kaggle 欺诈 28.5 万笔，获取方式见各项目 `data/README.md`），P4 为固定种子模拟；方法上，四个项目共用一条主线——**把模型输出翻译成财务报表语言**（公式 → 关键假设 → 结果 → 决策建议）；复现上，`make p4` 9 秒跑通一个完整项目、`make all` 约 80 秒跑完全部，74 个回归测试 + GitHub Actions CI 持续校验财务函数库不变量。**没环境也能看**：本页 + 各项目 README 已嵌 16 张图，或双击离线归档版 `fintech-ba-portfolio-完整版.html`。
+
+![通过率-坏账率-利润曲线：S2 风险定价在通过率 90.6% 处利润见顶 +1.75%，统一定价因逆向选择实际利润率 −2.69%](01-python-credit-scoring/images/strategy_curve.png)
+
+*镇仓图（P1）：同一条曲线上，"不定价"与"风险定价"的利润差就是年化 ¥1,663 万的来源——每个数字都可在 `01-python-credit-scoring/README.md` 第 5 节复核。*
+
 ## 项目总览
 
 
 | # | 项目 | 数据集（公开） | 核心结论 | 财务影响层 |
 |---|---|---|---|---|
-| P1 | [信用风险评分卡 × 风险-定价联动](01-credit-scorecard/) | Give Me Some Credit（OpenML，15 万样本） | XGBoost CV AUC **0.863±0.004** / KS 0.58 / Gini 0.74，全线超验收线；WOE 单调分箱 + PDO=20 评分刻度 + PSI 监控 | "评分+风险定价" vs "无模型统一定价"：全组合年化利润率 **+1.75% vs −2.69%**（逆向选择），年化增量利润约 **¥1,663 万**（¥3.75 亿账本） |
-| P2 | [客户流失预测 × 留存经济性](02-customer-churn/) | IBM Telco Customer Churn（7,043 客户） | LR/XGBoost AUC≈0.84、KS≈0.52；RFM 分群 + Cox PH（含 PH 假设检验）+ cohort 稳定性 + SHAP | 折现 LTV → 收入风险敞口 **¥33.1 万（年化收入 30.6%）** → 挽留 ROI：净利润最大 **N\*=550 人、净收益 ¥6.2 万、ROI 2.62**（含优先挽留名单） |
-| P3 | [欺诈检测 × 成本-收益阈值优化](03-fraud-detection/) | Credit Card Fraud Detection（Kaggle，28.5 万笔） | class_weight AUC 0.989 / AUPRC 0.799（时序切分；随机切分虚高至 0.876）；Isolation Forest 基线对照 | 成本矩阵（误杀 ¥120 vs 漏判=金额+¥50）定阈值 **0.5388**：拦截 0.11% 交易抓住 74.7% 欺诈，**比不拦截省 62.5%**、比全量人工审核省 99.7%；SHAP 规则精确率 23.3%（基准 177 倍） |
-| P4 | [模拟 Fintech 月度经营分析包](04-monthly-business-pack/) | 固定种子模拟（seed=42，非真实公司） | 中值法预算差异分解（恒等式校验）+ Holt 13 周现金流 + 80% 区间 + 三情景前瞻 | 现金 **第 6 周击穿 ¥3,000 万缓冲、第 13 周见底 ¥80 万** → 融资缺口 **¥2,920 万**：循环授信 ¥7,500 万、第 4 周前首笔提取 ¥3,000 万 |
+| P1 | [信用风险评分卡 × 风险-定价联动](01-python-credit-scoring/) | Give Me Some Credit（OpenML，15 万样本） | XGBoost CV AUC **0.863±0.004** / KS 0.58 / Gini 0.74，全线超验收线；WOE 单调分箱 + PDO=20 评分刻度 + PSI 监控 | "评分+风险定价" vs "无模型统一定价"：全组合年化利润率 **+1.75% vs −2.69%**（逆向选择），年化增量利润约 **¥1,663 万**（¥3.75 亿账本） |
+| P2 | [客户流失预测 × 留存经济性](02-python-churn-ltv/) | IBM Telco Customer Churn（7,043 客户） | LR/XGBoost AUC≈0.84、KS≈0.52；RFM 分群 + Cox PH（含 PH 假设检验）+ cohort 稳定性 + SHAP | 折现 LTV → 收入风险敞口 **¥33.1 万（年化收入 30.6%）** → 挽留 ROI：净利润最大 **N\*=550 人、净收益 ¥6.2 万、ROI 2.62**（含优先挽留名单） |
+| P3 | [欺诈检测 × 成本-收益阈值优化](03-python-fraud-threshold/) | Credit Card Fraud Detection（Kaggle，28.5 万笔） | class_weight AUC 0.989 / AUPRC 0.799（时序切分；随机切分虚高至 0.876）；Isolation Forest 基线对照 | 成本矩阵（误杀 ¥120 vs 漏判=金额+¥50）定阈值 **0.5388**：拦截 0.11% 交易抓住 74.7% 欺诈，**比不拦截省 62.5%**、比全量人工审核省 99.7%；SHAP 规则精确率 23.3%（基准 177 倍） |
+| P4 | [模拟 Fintech 月度经营分析包](04-fp-a-monthly-review/) | 固定种子模拟（seed=42，非真实公司） | 中值法预算差异分解（恒等式校验）+ Holt 13 周现金流 + 80% 区间 + 三情景前瞻 | 现金 **第 6 周击穿 ¥3,000 万缓冲、第 13 周见底 ¥80 万** → 融资缺口 **¥2,920 万**：循环授信 ¥7,500 万、第 4 周前首笔提取 ¥3,000 万 |
 
 ## 共同设计原则
 
 1. **财务影响层是标配**：每个项目的结论都不是"AUC 多少"，而是"这个数字换算成钱是多少、决策是什么"——盈亏平衡利率、挽留 ROI、成本最优阈值、融资缺口；
 2. **口径先于模型**：贷款经济学口径 A（利息仅由未违约者产生）、逆向选择（客户愿付模型）、中值法归因、流动性/盈利口径分离——口径错了，模型再准也白搭；
 3. **真实公开数据 + 固定种子**：P1-P3 全部使用公开数据集（下载方式见各项目 README），P4 为可复现模拟；所有切分固定 seed=42；
-4. **Notebook ≤ 200 行**：P1 200 / P2 131 / P3 154 / P4 132 行——约束倒逼"只留决策相关代码"；
+4. **Notebook ≤ 200 行**：P1 200 / P2 134 / P3 156 / P4 132 行——约束倒逼"只留决策相关代码"；
 5. **统一仓库结构**：每个项目都是 `src/finance.py`（可单测的纯函数库）+ `notebooks/`（执行态）+ `docs/BRD.md`（业务需求）+ `sql/extract.sql`（生产取数口径）+ `README.md`（一页结论）+ `images/` + `outputs/`。
 
 ## 面试速查（四项目 × 财务影响 × 核心追问）
@@ -41,26 +47,65 @@
 
 ```
 fintech-ba-portfolio/
-├── README.md                      ← 作品集主页（本文件）
-├── DEMO.md                        ← 演示脚本：怎么讲、被追问怎么答
-├── Makefile                       ← 一键运行入口（make help 查看全部命令）
-├── LICENSE                        ← MIT 许可
-├── pyproject.toml                 ← 项目元信息与 pytest 配置
-├── requirements-dev.txt           ← 测试依赖
-├── .github/workflows/ci.yml       ← CI（语法检查 + pytest + README 图片链接校验）
+├── README.md                           ← 作品集主页（本文件）
+├── DEMO.md                             ← 演示脚本：怎么讲、被追问怎么答
+├── Makefile                            ← 一键运行入口（make help 查看全部命令）
+├── LICENSE                             ← MIT 许可
+├── pyproject.toml                      ← 项目元信息与 pytest 配置
+├── requirements-dev.txt                ← 测试依赖
+├── .gitignore / .gitattributes         ← 原始数据不入库 / 大文件策略
+├── .github/workflows/ci.yml            ← CI（语法检查 + pytest + README 图片链接校验）
 ├── scripts/
-│   └── download_data.sh           ← 公开数据集获取指引（P1-P3）
-├── tests/                         ← 跨项目回归测试（74 用例）
-├── 01-credit-scorecard/           信用风险-定价联动（P1，主打）
-├── 02-customer-churn/             客户流失-留存经济性（P2）
-├── 03-fraud-detection/            欺诈检测-阈值优化（P3）
-└── 04-monthly-business-pack/      月度经营分析包（P4）
+│   └── download_data.sh                ← 公开数据集获取指引（P1-P3）
+├── tests/                              ← 跨项目回归测试（74 用例）
+├── 01-python-credit-scoring/           ← P1 信用风险-定价联动（主打）
+├── 02-python-churn-ltv/                ← P2 客户流失-留存经济性
+├── 03-python-fraud-threshold/          ← P3 欺诈检测-阈值优化
+├── 04-fp-a-monthly-review/             ← P4 月度经营分析包
+└── skills-proof/                       ← 技能证明五件套（按工具 × 场景组织，均可独立复现）
+    ├── 01-excel-three-statement/       ← Excel 三表联动模型（xlsx + 9 张分页截图）
+    │   ├── three_statement_model.xlsx  ← 主交付物：533 公式 0 错误，假设/三表/排程/图表/敏感性六页联动
+    │   ├── scripts/build_model.py      ← 模型生成器（openpyxl 单文件，可完整复现交付物）
+    │   ├── images/                     ← 9 张分页截图（说明检查→假设→三表→排程→图表→敏感性→三情景对比）
+    │   └── README.md
+    ├── 02-fpa-monthly-review/          ← FP&A 月度复盘（一页纸 + 面试速查卡 + 完整 notebook）
+    │   ├── MVP2_一页纸_A4.pdf          ← 主交付物：一页纸决策摘要（严格 1 页 A4）
+    │   ├── P4_analysis.ipynb           ← 唯一数据源：16 单元格 0 错误，含图表输出
+    │   ├── 面试速查卡_A4.pdf           ← 关键数字 + 8 问一句话答案 + 时间轴 + 自检清单
+    │   ├── 演示话术与QA.md             ← 3 分钟演示话术 + 8 问 QA 防御手册
+    │   ├── onepager.html               ← 一页纸源文件（数字由 key_metrics.json 程序化注入）
+    │   ├── cheatcard.html              ← 速查卡源文件
+    │   ├── docs/BRD.md                 ← 业务需求文档（背景/目标/范围/口径/验收）
+    │   ├── outputs/                    ← 6 个 CSV/JSON + 2 张图（KPI 唯一事实源 key_metrics.json）
+    │   ├── code/                       ← 分析/图表/构建脚本 + 中文字体（勿手改 outputs）
+    │   └── README.md
+    ├── 03-sql-credit-risk/             ← SQL 专题（15 查询按方法论编号拆分）
+    │   ├── cs-training.csv             ← GMSC 原始数据（150,000 行，随仓库分发保证可复现）
+    │   ├── setup.sql                   ← 建表 + 数据导入（幂等，可重复执行）
+    │   ├── 01_基础聚合.sql             ← 第 1 步：基础查询与聚合（Q1-Q3）
+    │   ├── 02_多表连接.sql             ← 第 2 步：多表 JOIN（Q4-Q5）
+    │   ├── 03_窗口函数.sql             ← 第 3 步：窗口函数（Q6-Q10）
+    │   ├── 04_cte.sql                  ← 第 4 步：CTE 公用表表达式（Q11-Q13）
+    │   ├── 05_子查询.sql               ← 第 5 步：子查询（Q14-Q15）
+    │   ├── images/                     ← 5 张查询结果终端截图 + 渲染器/生成脚本
+    │   └── README.md
+    ├── 04-bi-kpi-cockpit/              ← BI 驾驶舱（数据层一键复现，Tableau Public 搭建）
+    │   ├── data/                       ← 4 张 CSV（指标卡宽表/曲线长表/客户明细/三情景利润）
+    │   ├── scripts/build_bi_tables.py  ← 从 P1-P4 outputs 生成 CSV（31 项交叉验证全过才放行）
+    │   ├── dashboard_link.md           ← 看板内容导览与数据更新方式
+    │   ├── images/                     ← 看板截图（发布后补充）
+    │   └── README.md
+    └── 05-python-risk-pricing/         ← Python 利润曲线与利率×LGD 敏感性热力图
+        ├── financial_model.ipynb       ← 主交付物（92 行代码，含执行输出，Colab 一键运行）
+        ├── requirements.txt            ← 运行依赖
+        ├── images/                     ← 利润曲线 + 敏感性热力图
+        └── README.md
 ```
 
 每个项目内部结构（以 P1 为例）：
 
 ```
-01-credit-scorecard/
+01-python-credit-scoring/
 ├── README.md                       ← 一页结论（含财务影响层）
 ├── requirements.txt
 ├── build_nb.py                     ← Notebook 生成器（可复现）
@@ -78,10 +123,16 @@ fintech-ba-portfolio/
 │   └── metrics.sql                 ← 经营指标取数口径
 ├── images/                         ← 4 张图（无前缀，语义化命名）
 ├── outputs/                        ← 结果表 + metrics.json + 敏感性 CSV
-└── data/raw/.gitkeep               ← 占位（原始数据已 gitignore）
+└── data/
+    ├── README.md                   ← 数据来源（Kaggle/OpenML 链接）、获取方式、字段字典
+    └── raw/.gitkeep                ← 占位（原始数据已 gitignore）
 ```
 
-> **命名规范**：图片语义化（`eda.png` / `roc_ks_score.png`）、指标统一 `metrics.json`、敏感性产物 `*_sensitivity.csv`、监控产物 `monitoring_*.csv`。
+> **命名规范**（反例：`State & City wise_Revenue.sql`——空格 + `&` + 大小写混杂，跨平台与 URL 都不安全）：
+> 1. **目录**：`数字前缀-工具-场景` 全小写 kebab-case（`01-python-credit-scoring` = 第 1 个项目 + Python + 信用评分场景），数字前缀保证 GitHub 与文件管理器都按项目顺序排列；
+> 2. **文件**：无空格、无 `&`/`#`/`%` 等特殊字符，单词间用 `-`/`_`；同语义文件统一后缀（指标 `metrics.json`、敏感性 `*_sensitivity.csv`、监控 `monitoring_*.csv`、图片语义化 `eda.png`/`roc_ks_score.png`）；交付物允许中文名（如 `面试速查卡_A4.pdf`），但同样无空格、无特殊字符；
+> 3. **SQL 专题**：按语法方法论流程编号拆分——`01_基础聚合.sql` → `02_多表连接.sql` → `03_窗口函数.sql` → `04_cte.sql` → `05_子查询.sql`，一个文件一类语法，编号即推荐阅读顺序；
+> 4. **Notebook**：执行态 `.ipynb` + 同名生成器 `build_nb.py`（生成器保证 Notebook 可复现而非手改）。
 > **口径文档化**：每个指标的公式与验收线写在 `docs/metrics.md`，生产取数写在 `sql/metrics.sql`——**模型指标可复现、经营口径可对账**。
 
 ## 如何运行
@@ -90,7 +141,7 @@ fintech-ba-portfolio/
 
 | 方式 | 适合场景 | 耗时 |
 |---|---|---|
-| **① 只看结论与图** | 快速了解、手机查看、无本地环境 | 0 秒，直接读本页 + 各项目 README（已嵌 15 张图） |
+| **① 只看结论与图** | 快速了解、手机查看、无本地环境 | 0 秒，直接读本页 + 各项目 README（已嵌 16 张图） |
 | **② 一键本地复跑** | 有 Python 环境、想验证结果 | 约 80 秒跑完全部四个项目 |
 | **③ 离线归档版** | 无网、无环境，但要完整内容 | 双击 `fintech-ba-portfolio-完整版.html`（图片已内嵌） |
 
@@ -109,7 +160,7 @@ make all        # 四个项目全跑（约 80 秒）
 
 ### 方式 ③：离线归档版
 
-`fintech-ba-portfolio-完整版.html`（约 2.3MB）为自包含归档，README、演示脚本、文档、代码、15 张图全部内嵌，**无需环境、无需数据、无需网络**，双击即可打开。该文件与本仓库一同分发在压缩包内（与 `fintech-ba-portfolio/` 目录同级）。
+`fintech-ba-portfolio-完整版.html`（约 2.3MB）为自包含归档，README、演示脚本、文档、代码、16 张图全部内嵌，**无需环境、无需数据、无需网络**，双击即可打开。该文件与本仓库一同分发在压缩包内（与 `fintech-ba-portfolio/` 目录同级）。
 
 ## 自查清单（V2.0 需求规格）
 
@@ -117,18 +168,22 @@ make all        # 四个项目全跑（约 80 秒）
 |---|---|
 | 四个项目 + 财务影响层（公式/假设/结果/建议） | ✅ P1-P4 每个 README 第 5-7 节 |
 | 公开数据集 | ✅ GMSC / Telco / Kaggle CreditCard（P4 为声明过的模拟数据） |
-| Notebook ≤ 200 行 | ✅ 200 / 131 / 154 / 132 |
+| Notebook ≤ 200 行 | ✅ 200 / 134 / 156 / 132 |
 | 一页 README 含财务影响层 | ✅ 四项目均有 |
 | 统一仓库结构（src/docs/sql/notebooks/images/outputs） | ✅ |
 | 固定种子、一键复跑 | ✅ seed=42；`make all` 全通过（实测约 80 秒） |
 | data/raw 不提交 | ✅ .gitignore 排除（106MB 原始数据全部挡下） |
-| README 嵌图 | ✅ 15 张核心图 + 图注（此前 0 处） |
+| README 嵌图 | ✅ 16 张核心图 + 图注（此前 0 处） |
 | Notebook 内嵌图输出 | ✅ 15 张（此前 P3/P4 为 0，`plt.close` 掩盖了输出） |
 | 回归测试 | ✅ `tests/` 74 用例全绿（约 1 秒） |
 | CI | ✅ `.github/workflows/ci.yml`（语法检查 + pytest + 图片链接校验） |
 | 开源许可 | ✅ MIT |
 | 一键运行入口 | ✅ `make help`（check/test/p1-p4/all/clean/fetch-data） |
 | 演示脚本 | ✅ `DEMO.md`（面试话术 + 追问应对 + 时间分配） |
+| data/README.md 数据说明 | ✅ 四项目均含（来源链接/获取方式/字段字典；P4 为模拟数据生成逻辑） |
+| SQL 按方法论编号拆分 | ✅ 15 查询 → 5 个编号文件，每个查询附预期输出与实测性能 |
+| 命名规范明确化 | ✅ 目录/文件/SQL 三级规则 + 反例，写入"目录结构"节 |
+| Notebook "为什么"注释 | ✅ 42 处（P1-P4 22 处 + 05 利润曲线 20 处：分箱理由/生存分析口径/阈值解析解依据/分布形状稳健性等） |
 
 ## 声明
 

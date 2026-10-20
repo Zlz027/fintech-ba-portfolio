@@ -17,7 +17,7 @@ def load_finance(project: str, name: str | None = None):
 
     参数
     ----
-    project : 项目目录名，如 "01-credit-scorecard"
+    project : 项目目录名，如 "01-python-credit-scoring"
     name    : 缓存的模块别名，默认取项目名的数字前缀，避免 sys.modules 冲突
     """
     alias = name or f"fin_{project.split('-')[0]}"

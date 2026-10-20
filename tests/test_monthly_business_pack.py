@@ -7,7 +7,7 @@ import numpy as np
 
 from conftest import load_finance
 
-fin = load_finance("04-monthly-business-pack")
+fin = load_finance("04-fp-a-monthly-review")
 
 
 class TestPVVariance:

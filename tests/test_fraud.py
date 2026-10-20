@@ -7,7 +7,7 @@ import numpy as np
 
 from conftest import load_finance
 
-fin = load_finance("03-fraud-detection")
+fin = load_finance("03-python-fraud-threshold")
 
 
 def _fraud_sample(seed=42, n=5000, fraud_rate=0.005, small_amount=True):

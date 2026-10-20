@@ -1,9 +1,3 @@
-<!--
-⚠️ 上传前待办（发布看板后请删除本注释块，并完成两项替换）：
-1. 全文两处【yourname】/【FintechBADashboard】换成你发布后地址栏的真实链接；
-2. 把看板全貌截图存为 images/dashboard_overview.png（README 与 dashboard_link.md 都引用此路径）。
--->
-
 # 金融科技BA核心指标看板（BI）
 
 > **一句话结论**：把四个金融 AI 项目的分散结果整合成一张"管理层驾驶舱"——左侧看风控定价，右侧看欺诈成本，顶部看留存 ROI，底部看现金流缺口。
@@ -13,14 +7,17 @@
 - 使用 Tableau Public 搭建交互式看板：指标卡 + 曲线 + 散点 + 现金流预测
 - 面向管理层的指标口径设计与"一屏决策"布局
 
-## 如何打开
-点击以下链接直接查看交互式看板（**无需登录**）：
+## 看板链接
 
-[打开看板 → https://public.tableau.com/app/profile/【yourname】/viz/【FintechBADashboard】/Overview](https://public.tableau.com/app/profile/【yourname】/viz/【FintechBADashboard】/Overview)
+**当前状态**：看板的数据层已就绪——`data/` 下 4 张 CSV 由 `scripts/build_bi_tables.py` 从 P1-P4 的 outputs 生成，31 项交叉验证全部通过（详见「复现方式」）；Tableau Public 发布链接将在看板上线后更新于本节。
 
-![看板全貌](images/dashboard_overview.png)
+**发布步骤（约 15 分钟，需免费 Tableau Public 账号）**：
 
-> 上图为看板全貌截图；完整交互效果请点上面的链接。
+1. 安装 Tableau Public 桌面版（免费），连接 `data/` 下 4 个 CSV（utf-8-sig 编码，Excel 双击不乱码、Tableau 正确识别中文表头）；
+2. 按「看板说明」一节的布局搭建工作表与仪表板；
+3. `文件 > 保存到 Tableau Public`，将地址栏链接回填至本节，并在 `images/` 补一看板全貌截图（`dashboard_overview.png`）。
+
+> 看板内容导览见下方「看板说明」；逐字段的数据口径见 `data/` 各 CSV 表头与「复现方式」第 1 步。
 
 ## 看板说明
 
@@ -40,10 +37,10 @@
 > **（最后决策）**"最有决策价值的是 13 周现金流预测：虚线是 ¥3,000 万安全缓冲线，第 6 周击穿、第 13 周见底 ¥80 万，80% 悲观下界 -¥4,434 万——直接触发融资谈判（建议循环授信 ¥7,500 万）。右侧散点图按流失概率和 LTV 分层，告诉运营优先挽留谁。"
 
 ## 文件说明
-- `dashboard_link.md`：直达链接与更新方式
+- `dashboard_link.md`：看板内容导览与数据更新方式
 - `data/`：四个 CSV 数据源（指标卡宽表 / 曲线长表 / 客户明细 / 三情景利润）
-- `images/`：看板截图
-- `scripts/build_bi_tables.py`：从 P1–P4 outputs 生成 CSV 的脚本（含交叉验证）
+- `images/`：看板截图（发布后补充 `dashboard_overview.png`）
+- `scripts/build_bi_tables.py`：从 P1–P4 outputs 生成 CSV 的脚本（含 31 项交叉验证，全部通过才放行）
 
 ## 复现方式
 
@@ -52,11 +49,22 @@
 1. **生成数据**。在仓库根目录运行：
 
    ```bash
-   python3 skills-proof/04-bi-dashboard/scripts/build_bi_tables.py --out skills-proof/04-bi-dashboard/data
+   python3 skills-proof/04-bi-kpi-cockpit/scripts/build_bi_tables.py --out skills-proof/04-bi-kpi-cockpit/data
    ```
 
-   输出与仓库中 `skills-proof/04-bi-dashboard/data/` 下的 4 个 CSV 一致；唯一预期差异是「数据生成日期」列会变成运行当天（如需与仓库版本完全一致，用 `BUILD_DATE=<仓库版本日期> python3 ...` 固定，如 `BUILD_DATE=2026-10-19`）。
+   输出与仓库中 `skills-proof/04-bi-kpi-cockpit/data/` 下的 4 个 CSV 一致；唯一预期差异是「数据生成日期」列会变成运行当天（如需与仓库版本完全一致，用 `BUILD_DATE=<仓库版本日期> python3 ...` 固定，如 `BUILD_DATE=2026-10-19`）。
 
-2. **重建看板**。按交付文档第四章《搭建指南》，在 Tableau Public 桌面版中新建工作簿，连接上述 4 个 CSV，按步骤搭建工作表和仪表板。
+   **验收标准**：脚本末尾的「交叉验证报告」共 31 项（P1 九项 / P2 五项 / P3 九项 / P4 八项）全部 `[OK]` 才会输出「全部交叉验证通过」；任一 `[FAIL]` 都会以 AssertionError 立即中断，代表 BI 宽表与对应项目的 outputs 口径脱节，需先回查该项目。**运行 `python3 skills-proof/04-bi-kpi-cockpit/scripts/build_bi_tables.py`，看到全部交叉验证通过，即代表四张 BI 表与 P1-P4 的计算逻辑一致、数字可互证。**
 
-3. **核对成品（可选）**。在 Tableau Public 看板页面下载我发布时使用的 .twbx 工作簿（下载方法见交付文档 5.1 节），在 Tableau Public 桌面版中打开，逐项核对数据连接与图表设置。
+2. **重建看板**。在 Tableau Public 桌面版中新建工作簿，连接 `data/` 下 4 个 CSV，按「看板说明」的布局搭建：
+
+   | CSV | 形状 | 用途 |
+   |---|---|---|
+   | `kpi_summary.csv` | 1 行 × 20 列 | 4 张指标卡工作表（CV AUC / 挽留 ROI / 欺诈节省比例 / 融资缺口） |
+   | `time_series_and_curves.csv` | 4,706 行 × 9 列（Tidy 长表） | 按 `series_type` 拆三张曲线图：P1 通过率-坏账率-利润率曲线（`is_optimal=1` 行即最优点）、P3 成本-阈值曲线（对数轴）、P4 13 周现金流（Base 口径） |
+   | `p2_priority_scatter.csv` | 200 行 × 8 列 | 优先挽留散点（x=churn_prob、y=LTV、大小=expected_save、颜色=risk_tier） |
+   | `p4_scenarios.csv` | 3 行 × 5 列 | 三情景经营利润条形图（情景筛选器联动） |
+
+   筛选器按「看板说明」设置：风险分层与合同类型（作用于散点图）、情景（作用于三情景利润图）。
+
+3. **核对成品（可选）**。看板发布后，可在 Tableau Public 看板页面下载 .twbx 工作簿，在 Tableau Public 桌面版中打开，逐项核对数据连接与图表设置。

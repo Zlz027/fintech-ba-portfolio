@@ -1,6 +1,6 @@
 # Python 财务建模：风险定价利润曲线与敏感性分析
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Zlz027/fintech-ba-portfolio/blob/main/skills-proof/05-python-finance/financial_model.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Zlz027/fintech-ba-portfolio/blob/master/skills-proof/05-python-risk-pricing/financial_model.ipynb)
 
 ## 证明什么技能
 
@@ -59,8 +59,8 @@ Python 秒级完成——如果手动在 Excel 里改参数，假设每次改参
 ## 目录结构
 
 ```text
-skills-proof/05-python-finance/
-├── financial_model.ipynb        # 主交付物（84 行代码，含执行输出）
+skills-proof/05-python-risk-pricing/
+├── financial_model.ipynb        # 主交付物（92 行代码，含执行输出）
 ├── requirements.txt             # 运行依赖
 ├── README.md                    # 本文件
 └── images/

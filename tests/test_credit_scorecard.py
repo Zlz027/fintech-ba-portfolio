@@ -12,7 +12,7 @@ import pytest
 
 from conftest import load_finance
 
-fin = load_finance("01-credit-scorecard")
+fin = load_finance("01-python-credit-scoring")
 
 # 与 analysis.py / README 5.2 保持一致的基准假设
 LGD, FUND, OPEX, TGT, CAP, EAD = 0.75, 0.03, 0.02, 0.02, 0.24, 10_000.0

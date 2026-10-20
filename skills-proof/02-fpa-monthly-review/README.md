@@ -10,7 +10,7 @@
 ## 1. 目录结构
 
 ```
-MVP2/
+skills-proof/02-fpa-monthly-review/
 ├── MVP2_一页纸_A4.pdf        # 主交付物：一页纸决策摘要（严格 1 页 A4）
 ├── P4_analysis.ipynb         # 唯一数据源：完整分析 notebook（16 单元格，0 错误，含图表输出）
 ├── 演示话术与QA.md            # 3 分钟演示话术 + 8 问 QA 防御手册

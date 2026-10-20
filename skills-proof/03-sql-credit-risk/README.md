@@ -7,11 +7,15 @@
 ## 项目结构
 
 ```text
-skills-proof/03-sql/
+skills-proof/03-sql-credit-risk/
 ├── cs-training.csv      # GMSC（Give Me Some Credit）原始数据，150,000 条客户记录
 ├── setup.sql            # 建表 + 数据导入脚本（可重复执行，幂等）
-├── queries.sql          # 15 个业务查询（基础聚合 / JOIN / 窗口函数 / CTE / 子查询）
-├── credit.db            # 已构建好的 SQLite 数据库（删掉它即可按下方步骤重建）
+├── 01_基础聚合.sql       # 查询集 · 第 1 步：基础查询与聚合（Q1-Q3）
+├── 02_多表连接.sql       # 查询集 · 第 2 步：多表 JOIN（Q4-Q5）
+├── 03_窗口函数.sql       # 查询集 · 第 3 步：窗口函数（Q6-Q10）
+├── 04_cte.sql           # 查询集 · 第 4 步：CTE 公用表表达式（Q11-Q13）
+├── 05_子查询.sql        # 查询集 · 第 5 步：子查询（Q14-Q15）
+├── credit.db            # 运行下方步骤生成的 SQLite 数据库（可再生产物，已 gitignore，不随仓库分发）
 ├── images/              # 关键查询的终端运行结果截图
 │   ├── join_score_band.png
 │   ├── window_function_rownumber.png
@@ -35,7 +39,7 @@ GMSC（Give Me Some Credit）是 Kaggle 经典信贷违约预测竞赛数据集�
 | `age` | age | 年龄 |
 | `number_of_time_30_59_days_past_due_not_worse` | NumberOfTime30-59DaysPastDueNotWorse | 逾期 30-59 天次数 |
 | `debt_ratio` | DebtRatio | 债务收入比 |
-| `monthly_income` | MonthlyIncome | 月收入（缺失 29,731 条，19.74%） |
+| `monthly_income` | MonthlyIncome | 月收入（缺失 29,731 条，19.82%） |
 | `number_of_open_credit_lines_and_loans` | NumberOfOpenCreditLinesAndLoans | 未结清信用账户/贷款数 |
 | `number_of_times_90_days_late` | NumberOfTimes90DaysLate | 逾期 90 天以上次数 |
 | `number_real_estate_loans_or_lines` | NumberRealEstateLoansOrLines | 房地产贷款/额度数量 |
@@ -70,11 +74,25 @@ GMSC（Give Me Some Credit）是 Kaggle 经典信贷违约预测竞赛数据集�
    sqlite3 credit.db < setup.sql
    ```
 
-4. 执行查询：
+4. 执行查询——15 个查询按方法论流程拆分为 5 个编号文件，建议按序阅读（编号即阅读顺序）：
 
    ```bash
-   sqlite3 credit.db < queries.sql
+   sqlite3 credit.db < 01_基础聚合.sql     # 第 1 步：基础聚合（Q1-Q3）
+   sqlite3 credit.db < 02_多表连接.sql     # 第 2 步：多表 JOIN（Q4-Q5）
+   sqlite3 credit.db < 03_窗口函数.sql     # 第 3 步：窗口函数（Q6-Q10）
+   sqlite3 credit.db < 04_cte.sql         # 第 4 步：CTE（Q11-Q13）
+   sqlite3 credit.db < 05_子查询.sql      # 第 5 步：子查询（Q14-Q15）
    ```
+
+   或一条命令按序全跑：
+
+   ```bash
+   for f in 01_基础聚合.sql 02_多表连接.sql 03_窗口函数.sql 04_cte.sql 05_子查询.sql; do
+       echo "===== $f ====="; sqlite3 credit.db < "$f"
+   done
+   ```
+
+> 每个查询的注释块都包含三部分：**业务背景**（解决什么问题）、**预期输出**（150,000 行真实数据实测的终端结果）、**性能说明**（实测耗时与优化建议）——核对输出即可验证自己的环境是否复现一致。
 
 查看数据库内容（可选）：
 
@@ -88,12 +106,12 @@ sqlite3 credit.db ".tables"                              # credit_data  score_di
 ## 常见问题 FAQ
 
 **Q1：报错 `no such table: credit_data`？**
-先执行 `sqlite3 credit.db < setup.sql`，再执行 `queries.sql`——查询脚本依赖 setup.sql 建好的表。
+先执行 `sqlite3 credit.db < setup.sql`，再执行编号查询文件（`01_基础聚合.sql` 等）——查询脚本依赖 setup.sql 建好的表。
 
 **Q2：报错 `.import` 相关语法错误？**
 `.import --csv --skip` 需要 SQLite 3.32+，窗口函数需要 3.25+。用 `sqlite3 --version` 检查，过旧请升级（macOS 系统自带版本通常偏旧，可用 Homebrew 安装新版）。
 
-**Q3：`queries.sql` 开头的 `.headers ON` / `.mode column` 是什么？**
+**Q3：查询文件开头的 `.headers ON` / `.mode column` 是什么？**
 这是 sqlite3 CLI 的 dot-command，用于美化输出。它**只能在 sqlite3 命令行中运行**；如果用 Python 的 `sqlite3` 模块 `executescript()` 执行，请先删除这两行。
 
 **Q4：`credit.db` 需要提交到 Git 吗？**

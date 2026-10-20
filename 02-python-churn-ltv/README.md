@@ -104,9 +104,11 @@ jupyter nbconvert --to notebook --execute --inplace notebooks/churn_economics.ip
 python3 src/analysis.py   # 挽留成功率敏感性（基线断言校验）
 ```
 
-- Notebook 代码 131 行（≤200 行约束）；固定随机种子 42；一键复跑；
+- Notebook 代码 134 行（≤200 行约束）；固定随机种子 42；一键复跑；
 - 产物：`images/`（`km_by_contract`、`shap_summary`、`retention_economics` 共 3 图）、`outputs/`（`cluster_profile.csv` 分群画像、`metrics.json` 指标、`priority_retention_list.csv` 优先名单、`test_scored.csv` 测试集评分、`uplift_sensitivity.csv` 挽留成功率敏感性）；
 - 文档：`docs/BRD.md`（业务需求）、`docs/metrics.md`（指标字典）、`docs/monitoring.md`（监控与 A/B 方案）；生产取数：`sql/extract.sql`（建模宽表）、`sql/metrics.sql`（经营指标口径）。
+
+**验收标准**：`python3 src/analysis.py` 退出码为 0（全部基线断言通过）即代表挽留经济性口径复现一致——挽留成功率 30% 基准下最优触达 **N\*=550 人**、净收益 **¥6.2 万**、**ROI 2.62**。
 
 ## 8. 局限性与声明
 

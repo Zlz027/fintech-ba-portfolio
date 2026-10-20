@@ -1,4 +1,4 @@
-"""生成 04-monthly-business-pack 的 Notebook：模拟 Fintech 月度经营分析包（V2.0 最小版）。
+"""生成 04-fp-a-monthly-review 的 Notebook：模拟 Fintech 月度经营分析包（V2.0 最小版）。
 
 四个模块：预算差异（中值法量价分解）→ 13 周现金流预测（Holt+80%区间）→
 三情景损益前瞻 → 融资缺口与建议。约束：Notebook 代码行数 <= 200；一页 README 含财务影响层。
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import nbformat as nbf
 
-ROOT = Path("/workspace/fintech-ba-portfolio/04-monthly-business-pack")
+ROOT = Path(__file__).resolve().parent
 nb = nbf.v4.new_notebook()
 cells = []
 md = lambda s: cells.append(nbf.v4.new_markdown_cell(s))
@@ -41,7 +41,7 @@ import finance as fin  # noqa: E402
 
 plt.rcParams.update({"font.sans-serif": ["Noto Sans CJK JP", "DejaVu Sans"], "axes.unicode_minus": False})
 
-monthly, weekly, OPEN_CASH = fin.simulate_company(seed=SEED)
+monthly, weekly, OPEN_CASH = fin.simulate_company(seed=SEED)  # 固定种子模拟：P4 演示完整方法论链路，真实账本不可公开；seed=42 保证任何人复跑得到逐位一致的数据与结论
 print("月度损益 %d 个月（%s ~ %s）| 周度现金流 %d 周 | 期初现金 ¥%.0f 万"
       % (len(monthly), monthly.month.iloc[0], monthly.month.iloc[-1], len(weekly), OPEN_CASH))
 print("\\n收入 ¥%.1f → ¥%.1f 万/月；经营利润 ¥%.1f → ¥%.1f 万/月（%d 负 %d 正，2024-06 风险事件月 ¥%.1f 万）"
@@ -73,7 +73,7 @@ md("""## 1. 最新月预算差异：中值法量价分解
 code('''last = monthly.iloc[-1]
 rev_a = last.nim * last.volume          # 未舍入实际收入，保证差异桥恒等
 rev_b = last.budget_nim * last.budget_volume
-var = fin.pv_variance(last.budget_nim, last.budget_volume, last.nim, last.volume)
+var = fin.pv_variance(last.budget_nim, last.budget_volume, last.nim, last.volume)  # 中值法而非"先量后价"：价差/量差各按两端中值加权，归因不冲突、无顺序依赖，恒等式 价差+量差=总差异 可断言校验（见下方 assert）
 print("最新月 %s：预算收入 ¥%.1f vs 实际收入 ¥%.1f（差异 ¥%+.1f）"
       % (last.month, rev_b, rev_a, var["total"]))
 print("  价差 ¥%+.1f（净收入率 %.2f%% vs 预算 %.2f%%）| 量差 ¥%+.1f（放款 %.0f vs 预算 %.0f 万）"
@@ -111,7 +111,7 @@ md("""## 2. 13 周现金流预测（流动性口径）
 - 缓冲线：¥3,000 万（约 6 周净流出 + 月度运营支出）；
 - 关注三个数：**缓冲线击穿周**、**最低现金周**、**融资缺口**。""")
 
-code('''point, resid, alpha, beta = fin.fit_holt(weekly.net_cf.values, h=13)
+code('''point, resid, alpha, beta = fin.fit_holt(weekly.net_cf.values, h=13)  # Holt 线性指数平滑（网格搜 α/β）：周度现金流无外生驱动，参数少、可解释；80% 区间=1.2816σ√h（随机游走近似），随提前期扩大，回答"最坏要准备多少"
 lo, hi = fin.forecast_band(point, resid.std(ddof=1))
 bal = fin.cash_runway(point, OPEN_CASH)              # 第 0-13 周现金余额
 bal_lo = fin.cash_runway(lo, OPEN_CASH)              # 80% 悲观边界
@@ -150,7 +150,7 @@ md("""## 3. 三情景损益前瞻（盈利口径）
 | Bull | 2.5% | +5% | −10% | −15% | 客群上移、风控改善 |
 | Bear | 0.5% | −8% | +10% | +30% | 宏观恶化、风险抬头 |""")
 
-code('''scen_defs = {
+code('''scen_defs = {  # 三情景乘数是业务/风险/财务的前瞻假设（主观但需三方联审）：情景度量经营韧性，非资本配置建议；上线后以滚动重估校准
     "Base（基准）": dict(g_q=0.015, mults=dict(volume=1.00, nim=1.00, cac=1.00, loss=1.00)),
     "Bull（乐观）": dict(g_q=0.025, mults=dict(volume=1.00, nim=1.05, cac=0.90, loss=0.85)),
     "Bear（悲观）": dict(g_q=0.005, mults=dict(volume=1.00, nim=0.92, cac=1.10, loss=1.30)),

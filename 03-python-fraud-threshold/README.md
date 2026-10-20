@@ -126,10 +126,12 @@ pip install -r requirements.txt
 jupyter nbconvert --to notebook --execute --inplace notebooks/fraud_threshold_optimization.ipynb
 ```
 
-- Notebook 代码 **154 行**（≤200 行约束）；固定随机种子 42；一键复跑；
+- Notebook 代码 **156 行**（≤200 行约束）；固定随机种子 42；一键复跑；
 - 产物：`images/`（`eda`、`pr_curve`、`strategy_cost`、`shap_summary` 共 4 图）、`outputs/`（`model_comparison.csv` 三法对比、`strategy_cost.csv` 策略成本、`threshold_curve.csv` 阈值曲线、`threshold_sensitivity.csv` 敏感性、`fraud_rules.csv` 规则、`monitoring_metrics.csv` 监控指标共 6 表）；
 - 文档：`docs/BRD.md`（业务需求）、`docs/metrics.md`（指标字典）、`docs/monitoring.md`（监控与抽检回流方案）；生产取数：`sql/extract.sql`（特征宽表）、`sql/metrics.sql`（成本与监控指标口径）；
 - 数据获取：Kaggle `mlg-ulb/creditcardfraud`（`creditcard.csv`，约 144MB），放入 `data/raw/`（已 gitignore）。
+
+**验收标准**：Notebook 全程 0 error 执行完毕，且 `outputs/threshold_curve.csv` 中成本最低行阈值为 **0.5388**——即代表成本矩阵定标逻辑复现一致（该阈值是成本矩阵的解析解，非网格调参）。
 
 ## 8. 局限性与声明
 

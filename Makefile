@@ -18,10 +18,10 @@ PYTHON ?= python3
 PIP    ?= pip3
 NBCONV = jupyter nbconvert --to notebook --execute --inplace
 
-P1 := 01-credit-scorecard
-P2 := 02-customer-churn
-P3 := 03-fraud-detection
-P4 := 04-monthly-business-pack
+P1 := 01-python-credit-scoring
+P2 := 02-python-churn-ltv
+P3 := 03-python-fraud-threshold
+P4 := 04-fp-a-monthly-review
 
 .DEFAULT_GOAL := help
 .PHONY: help check test all p1 p2 p3 p4 clean fetch-data install-deps

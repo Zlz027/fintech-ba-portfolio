@@ -35,8 +35,8 @@ jobs:
 
       - name: 语法检查（全部源码与脚本）
         run: |
-          python -m compileall -q src tests 01-credit-scorecard 02-customer-churn \
-            03-fraud-detection 04-monthly-business-pack
+          python -m compileall -q src tests 01-python-credit-scoring 02-python-churn-ltv \
+            03-python-fraud-threshold 04-fp-a-monthly-review
 
       - name: 运行回归测试
         run: pytest -q

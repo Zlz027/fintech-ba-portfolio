@@ -138,6 +138,8 @@ python3 src/analysis.py   # 愿付溢价 / LGD 敏感性（基线断言校验）
 - 产物：`images/`（`eda`、`roc_ks_score`、`strategy_curve`、`shap_summary` 共 4 图）、`outputs/`（`scorecard.csv` 分值表、`metrics.json` 指标、`psi_features.csv` / `psi_score_deciles.csv` 稳定性、`policy_curve.csv`、`strategy_comparison.csv`、`test_pd.csv`、`wtp_premium_sensitivity.csv` / `lgd_sensitivity.csv` 敏感性）；
 - 文档：`docs/BRD.md`（业务需求）、`docs/metrics.md`（指标字典）、`docs/monitoring.md`（监控方案）；生产取数：`sql/extract.sql`（建模宽表）、`sql/metrics.sql`（经营指标口径）。
 
+**验收标准**：`python3 src/analysis.py` 退出码为 0（全部基线断言通过）即代表利润曲线与敏感性口径复现一致——LGD=75% 基准下 S2 利润率 **+1.75%**、S0 实现利润率约 **−2.7%**；Notebook 重跑后 `outputs/metrics.json` 中 XGBoost `test_ks≈0.579`、`cv_auc≈0.863` 即为同一口径。
+
 ## 8. 局限性与声明
 
 - GMSC 为 2011 年静态样本，无时间戳，无法做严格 OOT 验证；PSI 结论仅对分层切分有效；
